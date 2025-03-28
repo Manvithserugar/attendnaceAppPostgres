@@ -3,13 +3,15 @@ const crypto = require("crypto");
 
 const oauthRepo = require("../Repository/OauthRepo");
 const { use } = require("passport");
+const path = require("path");
+const { Domain } = require("domain");
 
 const generateJWT = (user) => {
   const secretKey = process.env.SECRET_KEY;
   const payload = {
     sub: user.id,
     email: user.email,
-    username: user.user_name,
+    username: user.name,
     roleId: user.role_id,
     iat: Math.floor(Date.now() / 1000), // Issued at (current time in seconds)
     exp: Math.floor(Date.now() / 1000) + 60 * 60, // Expires in 1 hour
@@ -31,7 +33,7 @@ const authenticationService = async (req, res, next) => {
     console.log(token);
     res.cookie("jwt", token, {
       httpOnly: true,
-      secure: false,
+      path: "/",
       maxAge: 60 * 60 * 1000,
     });
     res.status(200).json({ message: "user logged in" });
@@ -43,6 +45,8 @@ const authenticationService = async (req, res, next) => {
 
 const signUpService = async (req, res, next) => {
   const { name, email, password } = req.body;
+  console.log(name, email, password);
+
   try {
     const user = await oauthRepo.createUser(name, email, password);
     const token = generateJWT(user);
@@ -50,10 +54,10 @@ const signUpService = async (req, res, next) => {
 
     res.cookie("jwt", token, {
       httpOnly: true,
-      secure: false,
+      path: "/",
       maxAge: 60 * 60 * 1000,
     });
-    res.status(200).json({ message: "user signed up" });
+    res.status(201).json({ message: "user signed up" });
   } catch (err) {
     console.log("error while signing up : ", err);
     err.message = "email id already exists";

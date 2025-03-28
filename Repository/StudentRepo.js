@@ -38,7 +38,7 @@ const selectStudentById = async (id) => {
     studentQueries.SELECT_STUDENT_FROM_ID,
     [id]
   );
-  return selectedStudent.rows;
+  return selectedStudent.rows[0];
 };
 
 const updateStudent = async (studentId, name, email, phone, classId) => {

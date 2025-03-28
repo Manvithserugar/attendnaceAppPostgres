@@ -21,8 +21,9 @@ const passportConfig = () => {
         const user = await oauthRepo.checkUserForJwt(sub, email);
         if (user) {
           return done(null, user);
+        } else {
+          return done(null, false);
         }
-        return done(null, false);
       } catch (err) {
         return done(err, false);
       }
@@ -30,7 +31,18 @@ const passportConfig = () => {
   );
 };
 
-const authenticateJWT = passport.authenticate("jwt", { session: false });
+const authenticateJWT = (req, res, next) => {
+  passport.authenticate("jwt", { session: false }, (err, user, info) => {
+    if (err) {
+      return res.status(500).json({ message: err.message });
+    }
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized, User not found" });
+    }
+    req.user = user;
+    next();
+  })(req, res, next);
+};
 
 module.exports = {
   passportConfig,

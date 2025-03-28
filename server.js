@@ -25,6 +25,14 @@ app.get("/health", (req, res) => {
   res.status(200).send("server reached");
 });
 
+// Serve static files from a "public" directory
+app.use("/student", express.static(path.join(__dirname, "public")));
+
+// This route serves any file under public
+app.get("/student/*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", req.params[0]));
+});
+
 passportConfig();
 
 app.use(oauthRoute);

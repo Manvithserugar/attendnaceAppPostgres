@@ -2,9 +2,9 @@ const studentRepo = require("../Repository/StudentRepo");
 
 const createStudent = async (req, res, next) => {
   console.log("Endpoint: POST /");
-  let { name, email, phone, classId } = req.body;
+  let { name, email, phone, selectedClass } = req.body;
   try {
-    await studentRepo.insertStudent(name, email, phone, classId);
+    await studentRepo.insertStudent(name, email, phone, selectedClass);
 
     console.log("New student added successfully.");
     res.status(201).json({
@@ -23,7 +23,7 @@ const getAllStudents = async (req, res, next) => {
     const students = await studentRepo.selectAllStudents();
     if (students.length === 0) {
       console.log("Students data not found");
-      return res.status(404).json({ error: "Students not found" });
+      return res.status(404).json({ message: "Students not found" });
     }
     console.log("Students data:", students);
     res.status(200).json(students);
@@ -39,6 +39,7 @@ const getStudentById = async (req, res, next) => {
     const studentId = req.params.id;
     console.log("Student ID:", studentId);
     const student = await studentRepo.selectStudentById(studentId);
+    console.log("Student data:", student);
     if (!student) {
       console.log("Student not found");
       return res.status(404).json({ error: "Student not found" });
@@ -53,7 +54,7 @@ const getStudentById = async (req, res, next) => {
 
 const getAttendanceByDate = async (req, res, next) => {
   console.log("Endpoint: POST /attendance/date");
-  console.log("Request body:", req.body); // Log the request body
+  console.log("Request body:", req.body);
   try {
     console.log("Date provided in request body:", req.body.date);
     const dateToSearch = req.body.date;
@@ -61,7 +62,7 @@ const getAttendanceByDate = async (req, res, next) => {
     const attendance = await studentRepo.getAttendanceByDate(dateToSearch);
     if (attendance.length === 0) {
       console.log("attendance data not found");
-      return res.status(404).json({ error: "attendance data not found" });
+      return res.status(404).json({ message: "attendance data not found" });
     }
     console.log("student data retrieved successfully");
     res.status(200).json(attendance);

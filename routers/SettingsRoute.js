@@ -23,4 +23,10 @@ router.delete(
   settingsService.deleteDropdownOption
 );
 
+router.get(
+  `${apiBasePath}/backup`,
+  authorizeRoute(["admin"]),
+  settingsService.getBackupData
+);
+
 module.exports = router;

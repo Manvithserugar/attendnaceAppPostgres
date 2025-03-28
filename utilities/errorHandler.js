@@ -14,6 +14,8 @@ const errorHandler = (err, req, res, next) => {
       return res
         .status(403)
         .json({ message: "You don't have permission to do this" });
+    case 401:
+      return res.status(401).json({ message: "Unauthorized, Plz Log in" });
     default: // All other errors
       return res.status(500).json({ message: "Internal server error" });
   }

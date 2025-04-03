@@ -4,7 +4,7 @@ import config from "../config";
 const signupUser = async (user) => {
   try {
     const response = await axios.post(`${config.baseURL}/oauth/signup`, user);
-    return response.data;
+    return response;
   } catch (error) {
     throw error;
   }
@@ -13,7 +13,7 @@ const signupUser = async (user) => {
 const loginUser = async (user) => {
   try {
     const response = await axios.post(`${config.baseURL}/oauth/login`, user);
-    return response.data;
+    return response;
   } catch (error) {
     throw error;
   }

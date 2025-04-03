@@ -3,8 +3,6 @@ import studentReducer from "./studentsSlice";
 import settingsReducer from "./settingsSlice";
 import oAuthReducer from "./oAuthSlice";
 import notificationReducer from "./notificationSlice";
-import globalErrorReducer from "./globalErrorSlice";
-import permissionsReducer from "./permissionsSlice";
 
 const store = configureStore({
   reducer: {
@@ -12,8 +10,6 @@ const store = configureStore({
     settings: settingsReducer,
     oAuth: oAuthReducer,
     notification: notificationReducer,
-    globalError: globalErrorReducer,
-    permissions: permissionsReducer,
   },
 });
 

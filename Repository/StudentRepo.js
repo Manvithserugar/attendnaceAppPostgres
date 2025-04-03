@@ -68,10 +68,22 @@ const updateAttendance = async (attendanceArray, ids) => {
       pgFormat(studentQueries.INSERT_INTO_ATTENDANCE, attendanceArray)
     );
 
-    const rows = await client.query(studentQueries.UPDATE_STUDENT_STATS, [ids]);
+    const updatedRows = await client.query(
+      studentQueries.UPDATE_STUDENT_STATS,
+      [ids]
+    );
+
+    const studentsWithStreak = await client.query(
+      studentQueries.SELECT_STUDENTS_WITH_STREAK,
+      [ids]
+    );
+
     await client.query("COMMIT");
 
-    return rows.rowCount;
+    return {
+      updatedRows: updatedRows.rowCount,
+      studentsWithStreak: studentsWithStreak.rows,
+    };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;

@@ -8,6 +8,7 @@ const cookieParser = require("cookie-parser");
 const studentRoute = require("./routers/StudentRoute");
 const settingsRoute = require("./routers/SettingsRoute");
 const oauthRoute = require("./routers/OauthRouter");
+const sseRoute = require("./routers/sseRoute");
 const { errorHandler } = require("./utilities/errorHandler");
 const { passportConfig, authenticateJWT } = require("./PassportConfiguration");
 
@@ -39,6 +40,7 @@ app.use(oauthRoute);
 app.use(authenticateJWT);
 app.use(studentRoute);
 app.use(settingsRoute);
+app.use(sseRoute);
 app.use(errorHandler);
 
 app.listen(port, console.log(`server listening at port ${port}`));

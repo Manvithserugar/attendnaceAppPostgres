@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import View from "./pages/View";
 import Manage from "./pages/Manage";
 import Settings from "./pages/Settings";
 import UserSignUp from "./pages/UserSignUp";
-import SignupForm from "./components/SignupForm";
 import { NotificationProvider } from "./NotificationContext";
 import SnackbarNotification from "./components/SnackbarNotification";
 import StreakNotification from "./components/StreakNotification";
@@ -20,7 +19,6 @@ import {
   Breadcrumbs,
 } from "@mui/material";
 import { styled, ThemeProvider } from "@mui/material";
-import config from "./config";
 import theme from "./theme";
 
 const StyledLink = styled(Link)({
@@ -63,9 +61,19 @@ function App() {
                 <StyledLink to="/view">View Attendance</StyledLink>
                 <StyledLink to="/manage">Manage Students</StyledLink>
                 <StyledLink to="/settings">Settings</StyledLink>
-                <StyledLink to="/usersignup">Sign Up</StyledLink>
+                <Typography
+                  component="span"
+                  onClick={() => (window.location.href = "/usersignup")}
+                  sx={{
+                    cursor: "pointer",
+                    color: "white",
+                    textDecoration: "none",
+                  }}
+                >
+                  Sign Up
+                </Typography>
               </Breadcrumbs>
-              {/* <StreakNotification /> */}
+              <StreakNotification />
             </Box>
           </Toolbar>
         </AppBar>
@@ -73,12 +81,9 @@ function App() {
           <Container maxWidth="lg" sx={{ mt: 4, padding: { xs: 2, md: 3 } }}>
             <SnackbarNotification />
             <Routes>
-              <Route path="/" element={<Home baseURL={config.baseURL} />} />
-              <Route path="/view" element={<View baseURL={config.baseURL} />} />
-              <Route
-                path="/manage"
-                element={<Manage baseURL={config.baseURL} />}
-              />
+              <Route path="/" element={<Home />} />
+              <Route path="/view" element={<View />} />
+              <Route path="/manage" element={<Manage />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/usersignup/*" element={<UserSignUp />} />
             </Routes>

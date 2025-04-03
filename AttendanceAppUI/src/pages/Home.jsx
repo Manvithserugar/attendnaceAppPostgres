@@ -1,6 +1,5 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import studentService from "../services/studentService";
 
 import {
   TextField,
@@ -19,51 +18,57 @@ import {
   InputAdornment,
   CircularProgress,
 } from "@mui/material";
-import { NotificationContext } from "../NotificationContext";
+
 import useErrorHandler from "../hooks/useErrorHandler";
 import SearchIcon from "@mui/icons-material/Search";
 import "./Home.css";
 
-function Home() {
-  const { showNotification } = useContext(NotificationContext);
-  const { handleError } = useErrorHandler();
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(
-    format(new Date(), "yyyy-MM-dd")
-  );
-  const [students, setStudents] = useState([]);
+import { useDispatch, useSelector } from "react-redux";
+import {
+  getStudentsAttendance,
+  clearStudentsAttendance,
+  clearErrorAttendance,
+  markAttendance,
+} from "../store/studentsSlice";
 
-  const handleDateChange = (event) => {
-    setSelectedDate(event.target.value);
-  };
+import { showNotification } from "../store/notificationSlice";
+
+function Home() {
+  const dispatch = useDispatch();
+  const { studentsAttendance, isLoadingAttendance, errorAttendance } =
+    useSelector((state) => state.students);
+
+  const { handleError } = useErrorHandler();
+
+  useEffect(() => {
+    dispatch(getStudentsAttendance());
+
+    return () => {
+      dispatch(clearStudentsAttendance());
+    };
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (errorAttendance) {
+      handleError(errorAttendance);
+    }
+    return () => {
+      dispatch(clearErrorAttendance());
+    };
+  }, [errorAttendance, dispatch]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
 
   const studentsPerPage = 5;
 
-  const fetchStudents = async () => {
-    setIsLoading(true);
-    try {
-      const response = await studentService.getStudents();
-      setStudents(response);
-    } catch (error) {
-      handleError(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStudents();
-  }, []);
-
   const handleSearch = (event) => {
     setSearchQuery(event.target.value);
     setCurrentPage(1);
   };
 
-  const filteredStudents = students.filter((student) =>
+  const filteredStudents = studentsAttendance.filter((student) =>
     student.student_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -93,24 +98,31 @@ function Home() {
   const handleMarkAttendance = async () => {
     console.log("handleMarkAttendance called");
     if (selectedStudentIds.length === 0) {
-      showNotification("Please select at least one student.", "warning");
+      dispatch(
+        showNotification({
+          message: "Please select at least one student.",
+          severity: "warning",
+        })
+      );
       return;
     }
-    const formattedDate = selectedDate;
-    try {
-      const response = await studentService.markAttendance(
-        formattedDate,
-        selectedStudentIds
+
+    const date = new Date();
+    const formattedDate = format(date, "yyyy-MM-dd");
+
+    const resultAction = await dispatch(
+      markAttendance({ date: formattedDate, studentIds: selectedStudentIds })
+    );
+
+    if (markAttendance.fulfilled.match(resultAction)) {
+      dispatch(
+        showNotification({
+          message: "Attendance for selected students marked successfully!",
+        })
       );
-      if (response.status === 201) {
-        showNotification(
-          "Attendance for selected students marked successfully!"
-        );
-        fetchStudents();
-      }
-    } catch (error) {
-      handleError(error);
+      dispatch(getStudentsAttendance());
     }
+
     setSelectedStudentIds([]);
   };
 
@@ -136,7 +148,7 @@ function Home() {
           Mark Attendance
         </Button>
       </Container>
-      {isLoading && (
+      {isLoadingAttendance && (
         <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
           <CircularProgress />
         </Box>
@@ -166,42 +178,52 @@ function Home() {
               <TableCell>Total Attendance</TableCell>
               <TableCell>Consecutive classes</TableCell>
               <TableCell>Streak Of 4</TableCell>
-              <TableCell>Last 5 Classes</TableCell>
+              <TableCell>Last 4 Classes</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {currentStudents.map((student) => (
-              <TableRow key={student.id}>
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    edge="end"
-                    onChange={(event) => handleSelectStudent(event, student.id)}
-                    checked={selectedStudentIds.includes(student.id)}
-                  />
-                </TableCell>
-                <TableCell>{student.student_name}</TableCell>
-                <TableCell>{student.id}</TableCell>
-                <TableCell>{student.class_name}</TableCell>
-                <TableCell>{student.total}</TableCell>
-                <TableCell>{student.consecutive_classes}</TableCell>
-                <TableCell>{student.streak_of_four}</TableCell>
-                <TableCell>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "4px",
-                    }}
-                  >
-                    {student.last4Dates.map((date, index) => (
-                      <div key={index} style={{ display: "block" }}>
-                        {format(new Date(date), "dd/MM/yyyy")}
-                      </div>
-                    ))}
-                  </div>
+            {currentStudents.length > 0 ? (
+              currentStudents.map((student) => (
+                <TableRow key={student.id}>
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      edge="end"
+                      onChange={(event) =>
+                        handleSelectStudent(event, student.id)
+                      }
+                      checked={selectedStudentIds.includes(student.id)}
+                    />
+                  </TableCell>
+                  <TableCell>{student.student_name}</TableCell>
+                  <TableCell>{student.id}</TableCell>
+                  <TableCell>{student.class_name}</TableCell>
+                  <TableCell>{student.total}</TableCell>
+                  <TableCell>{student.consecutive_classes}</TableCell>
+                  <TableCell>{student.streak_of_four}</TableCell>
+                  <TableCell>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "4px",
+                      }}
+                    >
+                      {student.last4Dates.map((date, index) => (
+                        <div key={index} style={{ display: "block" }}>
+                          {format(new Date(date), "dd/MM/yyyy")}
+                        </div>
+                      ))}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={8} align="center">
+                  No students found.
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </TableContainer>

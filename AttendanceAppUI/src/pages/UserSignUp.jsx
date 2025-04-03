@@ -1,41 +1,37 @@
 import SignupForm from "../components/SignupForm";
 import LoginForm from "../components/LoginForm";
-import { useState } from "react";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { signupUser, loginUser } from "../store/oAuthSlice";
 import { Box, CircularProgress } from "@mui/material";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import useErrorHandler from "../hooks/useErrorHandler";
-import oauthService from "../services/oauthService";
 
 function UserSignUp() {
-  const [isLoading, setIsLoading] = useState(false);
   const { handleError } = useErrorHandler();
-  const navigate = useNavigate();
-  const handleSignup = async (user) => {
-    setIsLoading(true);
-    console.log("Signup Data:", user);
-    try {
-      const response = await oauthService.signupUser(user);
-      if (response.status === 201) navigate("/");
-    } catch (error) {
+  const dispatch = useDispatch();
+
+  const { isLoading, error } = useSelector((state) => state.oAuth);
+  useEffect(() => {
+    if (error) {
+      console.error("Authentication Error:", error);
       handleError(error);
-    } finally {
-      setIsLoading(false);
+    }
+  }, [error]);
+
+  const handleSignup = async (user) => {
+    const resultAction = await dispatch(signupUser(user));
+    if (signupUser.fulfilled.match(resultAction)) {
+      window.location.href = "/";
     }
   };
 
   const handleLogin = async (user) => {
-    setIsLoading(true);
-    console.log("Signup Data:", user);
-    try {
-      const response = await oauthService.loginUser(user);
-      if (response.status === 200) navigate("/");
-    } catch (error) {
-      handleError(error);
-    } finally {
-      setIsLoading(false);
+    const resultAction = await dispatch(loginUser(user));
+    if (loginUser.fulfilled.match(resultAction)) {
+      window.location.href = "/";
     }
   };
-
   return (
     <>
       {isLoading && (

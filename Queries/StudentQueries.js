@@ -21,6 +21,9 @@ const INSERT_INTO_ATTENDANCE =
 const UPDATE_STUDENT_STATS =
   "update student_stats set total = total + 1, consecutive_classes = (total + 1) % 4, streak_of_four = case when (total + 1) % 4 = 0 then streak_of_four + 1 else streak_of_four end where student_id = any ($1)";
 
+const SELECT_STUDENTS_WITH_STREAK =
+  "select s.id, s.name from students as s, student_stats as ss where ss.consecutive_classes = 0 and ss.student_id = s.id and s.id = any($1)";
+
 const GET_ATTENDANCE_BY_DATE =
   "select distinct a.attendance_date, s.id, s.name as student_name, c.name as class_name, ss.total, ss.consecutive_classes, ss.streak_of_four from students as s, student_class as sc, student_stats as ss, classes as c, attendance as a where sc.student_id = s.id and c.id = sc.class_id and ss.student_id = s.id and s.id = a.student_id and a.attendance_date = $1 order by s.name asc";
 
@@ -50,4 +53,5 @@ module.exports = {
   GET_LAST_FOUR_DATES,
   SELECT_ALL_STUDENTS,
   GET_ALL_DATES_BY_ID,
+  SELECT_STUDENTS_WITH_STREAK,
 };

@@ -2,7 +2,6 @@ import React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { TextField, Button, Box } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { Navigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
 const GreyText = styled("span")({

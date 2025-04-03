@@ -46,7 +46,7 @@ const getBackupData = async (req, res, next) => {
       console.log("backup data not found");
       return res.status(404).json({ message: "backup data not found" });
     }
-    console.log("backup data retrieved successfully");
+    console.log("backup data retrieved successfully", backup);
     res.status(200).json(backup);
   } catch (error) {
     console.error("Error getting backup:");

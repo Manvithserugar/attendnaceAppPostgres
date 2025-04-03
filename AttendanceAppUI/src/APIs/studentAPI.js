@@ -7,7 +7,6 @@ const getStudents = async (date) => {
       `${config.baseURL}/student/attendance/date`,
       { date }
     );
-
     return response.data;
   } catch (error) {
     throw error;

@@ -1,10 +1,6 @@
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-
 const oauthRepo = require("../Repository/OauthRepo");
-const { use } = require("passport");
-const path = require("path");
-const { Domain } = require("domain");
 
 const generateJWT = (user) => {
   const secretKey = process.env.SECRET_KEY;
@@ -26,17 +22,23 @@ const generateJWT = (user) => {
 const authenticationService = async (req, res, next) => {
   const { email, password } = req.body;
   try {
-    const user = await oauthRepo.checkUser(email, password);
+    const { user, permissions } = await oauthRepo.checkUser(email, password);
+    console.log(permissions);
     if (!user)
-      return res.status(404).json({ message: "invalid email or password" });
+      return res.status(404).json({
+        message: "invalid email or password",
+      });
     const token = generateJWT(user);
+    const transformedPermissions = permissions.map((perm) => perm.access);
     console.log(token);
     res.cookie("jwt", token, {
       httpOnly: true,
       path: "/",
       maxAge: 60 * 60 * 1000,
     });
-    res.status(200).json({ message: "user logged in" });
+    res
+      .status(200)
+      .json({ message: "user logged in", permissions: transformedPermissions });
   } catch (error) {
     console.log("error logging in");
     next(error);
@@ -48,16 +50,24 @@ const signUpService = async (req, res, next) => {
   console.log(name, email, password);
 
   try {
-    const user = await oauthRepo.createUser(name, email, password);
+    const { user, permissions } = await oauthRepo.createUser(
+      name,
+      email,
+      password
+    );
     const token = generateJWT(user);
     console.log(token);
+
+    const transformedPermissions = permissions.map((perm) => perm.access);
 
     res.cookie("jwt", token, {
       httpOnly: true,
       path: "/",
       maxAge: 60 * 60 * 1000,
     });
-    res.status(201).json({ message: "user signed up" });
+    res
+      .status(201)
+      .json({ message: "user signed up", permissions: transformedPermissions });
   } catch (err) {
     console.log("error while signing up : ", err);
     err.message = "email id already exists";

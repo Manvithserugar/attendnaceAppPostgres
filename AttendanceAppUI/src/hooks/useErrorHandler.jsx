@@ -1,21 +1,24 @@
-import { useContext } from "react";
-import { NotificationContext } from "../NotificationContext";
+import { useDispatch, useSelector } from "react-redux";
+import { showNotification } from "../store/notificationSlice";
 
 const useErrorHandler = () => {
-  const { showNotification } = useContext(NotificationContext);
+  const dispatch = useDispatch();
 
   const handleError = (error) => {
     console.error("Error:", error);
-    let errorMessage = "Error";
-    if (error.response && error.response.data) {
+
+    let errorMessage = "An error occurred";
+
+    if (typeof error === "string") {
+      errorMessage = error;
+    } else if (error instanceof Error || error.message) {
+      errorMessage = error.message;
+    } else if (error && typeof error === "object") {
       errorMessage =
-        error.response.data.error ||
-        error.response.data.message ||
-        errorMessage;
-    } else {
-      errorMessage += ` ${error.message}`;
+        error.response?.data?.error || error.data?.message || errorMessage;
     }
-    showNotification(errorMessage, "error");
+
+    dispatch(showNotification({ message: errorMessage, severity: "error" }));
   };
 
   return { handleError };

@@ -3,14 +3,19 @@ import { Alert } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import { NotificationContext } from "../NotificationContext";
+import { setOpen } from "../store/notificationSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 function SnackbarNotification() {
+  const { open, notification, severity } = useSelector(
+    (state) => state.notification
+  );
+  const dispatch = useDispatch();
 
-  const { open, setOpen, severity, notification } = useContext(NotificationContext);
   useEffect(() => {
     if (open) {
       const timer = setTimeout(() => {
-        setOpen(false);
+        dispatch(setOpen(false));
       }, 4000);
 
       return () => clearTimeout(timer);
@@ -18,7 +23,7 @@ function SnackbarNotification() {
   }, [open]);
 
   const handleClose = () => {
-    setOpen(false);
+    dispatch(setOpen(false));
   };
 
   return open ? (
@@ -29,7 +34,7 @@ function SnackbarNotification() {
         top: 100,
         left: 75,
         right: 75,
-        position: 'fixed',
+        position: "fixed",
         zIndex: 9999,
       }}
       action={

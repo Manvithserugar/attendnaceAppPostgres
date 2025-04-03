@@ -9,9 +9,13 @@ const SELECT_FROM_USERS_BY_ID =
 
 const SELECT_FROM_ROLES = "select role from roles where id = $1";
 
+const SELECT_ACCESS_FROM_ROLE_ACCESS =
+  "select access from role_access where role_id = $1";
+
 module.exports = {
   INSERT_INTO_USERS,
   SELECT_FROM_USERS,
   SELECT_FROM_USERS_BY_ID,
   SELECT_FROM_ROLES,
+  SELECT_ACCESS_FROM_ROLE_ACCESS,
 };

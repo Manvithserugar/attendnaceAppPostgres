@@ -2,12 +2,10 @@ import React, {
   useState,
   useEffect,
   useRef,
-  useContext,
   useCallback,
   useMemo,
 } from "react";
-import { format } from "date-fns";
-import studentService from "../services/studentService";
+import { useForm, Controller } from "react-hook-form";
 import ModalDeleteVerify from "../components/ModalDeleteVerify";
 import {
   TextField,
@@ -21,34 +19,49 @@ import {
   Typography,
   Pagination,
   CircularProgress,
-  Modal,
-  Backdrop,
-  Fade,
   MenuItem,
 } from "@mui/material";
 
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-
-import { NotificationContext } from "../NotificationContext";
 import useErrorHandler from "../hooks/useErrorHandler";
 import "./Manage.css";
-import settingsService from "../services/settingsService";
+
+import {
+  deleteStudentById,
+  getStudentsDetails,
+  updateStudent,
+  addStudent,
+} from "../store/studentsSlice";
+import { useDispatch, useSelector } from "react-redux";
+import studentAPI from "../APIs/studentAPI";
+import { showNotification } from "../store/notificationSlice";
+import { getDropdownOptions } from "../store/settingsSlice";
 
 function Manage() {
-  const { showNotification } = useContext(NotificationContext);
+  const {
+    handleSubmit,
+    control,
+    reset,
+    setValue,
+    getValues,
+    formState: { errors },
+  } = useForm({
+    mode: "onBlur",
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      selectedClass: "",
+    },
+  });
+
   const { handleError } = useErrorHandler();
   const [studentId, setStudentId] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [selectedClass, setSelectedClass] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editStudentId, setEditStudentId] = useState("");
-  const [students, setStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteStudent, setDeleteStudent] = useState("");
   const [dropdownOptions, setDropdownOptions] = useState([]);
@@ -56,7 +69,11 @@ function Manage() {
   const studentsPerPage = 5;
 
   const formRef = useRef(null);
-  const classNameRef = useRef("");
+
+  const dispatch = useDispatch();
+  const { studentsDetails, isLoadingStudentsDetails } = useSelector(
+    (state) => state.students
+  );
 
   useEffect(() => {
     fetchDropdownOptions();
@@ -64,27 +81,19 @@ function Manage() {
   }, []);
 
   useEffect(() => {
+    const { name, email, phone } = getValues();
     if (!name && !email && !phone) {
       setIsEditing(false);
       setEditStudentId("");
     }
-  }, [name, email, phone]);
+  }, [getValues]);
 
   const fetchDropdownOptions = async () => {
     try {
-      const response = await settingsService.getDropdownOptions();
-      setDropdownOptions(response);
+      const options = await dispatch(getDropdownOptions()).unwrap();
+      setDropdownOptions(options);
     } catch (error) {
-      if (error.response.status === 404) {
-        setStudents([]);
-        showNotification(
-          "could not find any relevant data for operation",
-          "warning"
-        );
-        return;
-      } else {
-        handleError(error);
-      }
+      handleError(error || "Failed to fetch dropdown options.");
     }
   };
 
@@ -95,10 +104,10 @@ function Manage() {
   }, [editStudentId]);
 
   const filteredStudents = useMemo(() => {
-    return students.filter((student) =>
+    return studentsDetails.filter((student) =>
       student.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [students, searchQuery]);
+  }, [studentsDetails, searchQuery]);
 
   const indexOfLastStudent = currentPage * studentsPerPage;
   const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
@@ -118,21 +127,23 @@ function Manage() {
   }, []);
 
   const fetchStudentDetails = async (id) => {
-    const student = await studentService.getStudentDetailsById(id);
+    const student = await studentAPI.getStudentDetailsById(id);
     try {
       if (student) {
         setStudentId(student.id);
-        setName(student.name);
-        setEmail(student.email);
-        setPhone(student.phone);
-        setSelectedClass(student.class_id);
+        setValue("name", student.name);
+        setValue("email", student.email);
+        setValue("phone", student.phone);
+        setValue("selectedClass", student.class_id);
       }
     } catch (error) {
       if (error.response.status === 404) {
         setDropdownOptions([]);
-        showNotification(
-          "could not find any relevant data for operation",
-          "warning"
+        dispatch(
+          showNotification({
+            message: "could not find any relevant data for operation",
+            severity: "warning",
+          })
         );
         return;
       } else {
@@ -143,12 +154,9 @@ function Manage() {
 
   const clearFields = useCallback(() => {
     setStudentId("");
-    setEditStudentId("");
-    setName("");
-    setEmail("");
-    setPhone("");
-    setSelectedClass("");
+    reset();
     setIsEditing(false);
+    setEditStudentId("");
     console.log("all fields cleared");
   }, []);
 
@@ -160,91 +168,87 @@ function Manage() {
         formRef.current.scrollIntoView({ behavior: "smooth" });
       }
     },
-    [students]
+    [studentsDetails]
   );
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const onSubmit = async (student) => {
     if (isEditing) {
-      await handleUpdate(editStudentId);
+      await handleUpdate(editStudentId, student);
     } else {
-      await handleAdd();
+      await handleAdd(student);
     }
   };
 
   const fetchStudents = async () => {
-    setIsLoading(true);
     try {
-      const response = await studentService.getStudentsDetails();
-      setStudents(response);
+      await dispatch(getStudentsDetails()).unwrap();
     } catch (error) {
-      if (error.response.status === 404) {
-        setStudents([]);
-        showNotification(
-          "could not find any relevant data for operation",
-          "warning"
-        );
-        return;
-      } else {
-        handleError(error);
-      }
-    } finally {
-      setIsLoading(false);
+      handleError(error || "Failed to fetch students.");
     }
   };
 
   const handleDelete = async (studentId) => {
-    setIsLoading(true);
     try {
-      await studentService.deleteStudent(studentId);
-      showNotification("Student deleted successfully", "success");
-      fetchStudents();
-    } catch (error) {
-      handleError(error);
-    } finally {
-      setIsLoading(false);
+      await dispatch(deleteStudentById(studentId)).unwrap();
+
+      dispatch(
+        showNotification({
+          message: "Student deleted successfully",
+          severity: "success",
+        })
+      );
+      await fetchStudents();
       setDeleteStudent("");
+    } catch (error) {
+      handleError(error || "An error occurred while deleting.");
     }
   };
 
-  const handleUpdate = async (studentId) => {
-    setIsLoading(true);
+  const handleUpdate = async (studentId, student) => {
+    const updatedBody = { ...student, classId: student.selectedClass };
+    delete updatedBody.selectedClass;
+    console.log(updatedBody);
+
     try {
-      await studentService.updateStudent(studentId, {
-        name,
-        email,
-        phone,
-        classId: selectedClass,
-      });
-      showNotification("Student updated successfully", "success");
+      await dispatch(updateStudent({ id: studentId, updatedBody })).unwrap();
+
+      dispatch(
+        showNotification({
+          message: "Student updated successfully",
+          severity: "success",
+        })
+      );
       clearFields();
-      fetchStudents();
+      await fetchStudents();
       setIsEditing(false);
       setEditStudentId("");
     } catch (error) {
-      handleError(error);
-    } finally {
-      setIsLoading(false);
+      const errorMessage =
+        error?.status === 400
+          ? "Same email or phone already exists"
+          : error?.data || "An error occurred while updating";
+      handleError(errorMessage);
     }
   };
 
-  const handleAdd = async () => {
-    setIsLoading(true);
+  const handleAdd = async (student) => {
     try {
-      const response = await studentService.addStudent({
-        name,
-        email,
-        phone,
-        selectedClass,
-      });
+      await dispatch(addStudent(student)).unwrap();
 
-      showNotification("Student added successfully", "success");
+      dispatch(
+        showNotification({
+          message: "Student added successfully",
+          severity: "success",
+        })
+      );
       clearFields();
-      fetchStudents();
+      await fetchStudents();
     } catch (error) {
-      handleError(error);
-    } finally {
-      setIsLoading(false);
+      const errorMessage =
+        error?.status === 400
+          ? "Same email or phone already exists"
+          : error?.data || "An error occurred while updating";
+      handleError(errorMessage);
     }
   };
 
@@ -261,53 +265,106 @@ function Manage() {
   return (
     <div className="manage-container">
       <h1>Manage Students</h1>
-      {isLoading && (
+      {isLoadingStudentsDetails && (
         <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
           <CircularProgress />
         </Box>
       )}
       <Box
-        ref={formRef}
         component="form"
-        onSubmit={handleSubmit}
+        ref={formRef}
+        onSubmit={handleSubmit(onSubmit)}
         className="form-container"
       >
         {isEditing && <h3>Student Id: {studentId}</h3>}
-        <TextField
-          label="Name"
-          variant="outlined"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
+
+        <Controller
+          name="name"
+          control={control}
+          rules={{
+            required: "Name is required",
+          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Name"
+              variant="outlined"
+              error={!!errors.name}
+              helperText={errors.name?.message}
+              required
+            />
+          )}
         />
-        <TextField
-          label="Email"
-          variant="outlined"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+
+        <Controller
+          name="email"
+          control={control}
+          rules={{
+            required: "Email is required",
+            pattern: {
+              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+              message: "Invalid email format",
+            },
+          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Email"
+              variant="outlined"
+              type="email"
+              error={!!errors.email}
+              helperText={errors.email?.message}
+              required
+            />
+          )}
         />
-        <TextField
-          label="Phone"
-          variant="outlined"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          required
+
+        <Controller
+          name="phone"
+          control={control}
+          rules={{
+            required: "Phone is required",
+            pattern: {
+              value: /^[0-9]{10}$/,
+              message: "Phone must be a 10-digit number",
+            },
+          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Phone"
+              variant="outlined"
+              error={!!errors.phone}
+              helperText={errors.phone?.message}
+              required
+            />
+          )}
         />
-        <TextField
-          select
-          label="Class"
-          value={selectedClass}
-          onChange={(e) => setSelectedClass(e.target.value)}
-          variant="outlined"
-          required
-        >
-          {dropdownOptions.map((option) => (
-            <MenuItem key={option.id} value={option.id}>
-              {option.name}
-            </MenuItem>
-          ))}
-        </TextField>
+
+        <Controller
+          name="selectedClass"
+          control={control}
+          rules={{
+            required: "Class is required",
+          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              select
+              label="Class"
+              variant="outlined"
+              error={!!errors.selectedClass}
+              helperText={errors.selectedClass?.message}
+              required
+            >
+              {dropdownOptions.map((option) => (
+                <MenuItem key={option.id} value={option.id}>
+                  {option.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+        />
 
         <Box className="form-actions">
           <div className="form-actions-inner">
@@ -316,7 +373,7 @@ function Manage() {
               variant="contained"
               size="medium"
               color="primary"
-              onClick={clearFields}
+              onClick={() => clearFields()} // Resets the form
             >
               Clear
             </Button>
@@ -332,6 +389,7 @@ function Manage() {
           </div>
         </Box>
       </Box>
+
       <TextField
         label="Search students..."
         variant="outlined"
@@ -339,6 +397,7 @@ function Manage() {
         onChange={handleSearch}
         sx={{ mb: 2, width: "100%" }}
       />
+
       <List>
         {currentStudents.map((student) => (
           <ListItem

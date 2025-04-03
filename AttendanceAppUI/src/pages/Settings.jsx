@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   TextField,
   Button,
@@ -15,41 +15,41 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
 import AddIcon from "@mui/icons-material/Add";
-import { NotificationContext } from "../NotificationContext";
 import useErrorHandler from "../hooks/useErrorHandler";
-import settingsService from "../services/settingsService";
 import ModalDeleteVerify from "../components/ModalDeleteVerify";
 import "./Settings.css";
 import * as XLSX from "xlsx";
+import { useDispatch, useSelector } from "react-redux";
+import { showNotification } from "../store/notificationSlice";
+
+import {
+  getDropdownOptions,
+  addDropdownOption,
+  deleteDropdownOption,
+  downloadBackup,
+} from "../store/settingsSlice";
 
 function Settings() {
-  const { showNotification } = useContext(NotificationContext);
   const { handleError } = useErrorHandler();
-  const [isLoading, setIsLoading] = useState(false);
   const [newOption, setNewOption] = useState("");
-  const [dropdownOptions, setDropdownOptions] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteClass, setDeleteClass] = useState("");
   const [deleteMessage, setDeleteMessage] = useState("");
+
+  const dispatch = useDispatch();
+  const { options, isLoadingDropdown, errorDropdown } = useSelector(
+    (state) => state.settings
+  );
 
   useEffect(() => {
     fetchDropdownOptions();
   }, []);
 
   const fetchDropdownOptions = async () => {
-    setIsLoading(true);
     try {
-      const response = await settingsService.getDropdownOptions();
-      setDropdownOptions(response);
+      await dispatch(getDropdownOptions()).unwrap();
     } catch (error) {
-      if (error.response.status === 404) {
-        setDropdownOptions([]);
-        return;
-      } else {
-        handleError(error);
-      }
-    } finally {
-      setIsLoading(false);
+      handleError(error || "Failed to fetch dropdown options.");
     }
   };
 
@@ -65,10 +65,11 @@ function Settings() {
 
   const handleDownloadBackup = async () => {
     try {
-      const response = await settingsService.downloadBackup();
+      const backup = await dispatch(downloadBackup()).unwrap();
+      console.log(backup);
 
-      const flattenedData = response.map((item) => ({
-        // flattened to fit the attendedDates array into a single column
+      const flattenedData = backup.map((item) => ({
+        // Flattened to fit the attendedDates array into a single column
         id: item.id,
         name: item.student_name,
         class: item.class_name,
@@ -95,56 +96,58 @@ function Settings() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+
+      dispatch(
+        showNotification({
+          message: "Backup downloaded successfully!",
+          severity: "success",
+        })
+      );
     } catch (error) {
-      handleError(error);
+      console.error("Error during backup download:", error);
+      handleError(error || "An error occurred while downloading the backup.");
     }
   };
 
   const handleAddOption = async () => {
     if (newOption.trim() !== "") {
       try {
-        await settingsService.addDropdownOption(newOption.trim());
-        const updatedOptions = await settingsService.getDropdownOptions();
-        setDropdownOptions(updatedOptions);
+        await dispatch(addDropdownOption(newOption)).unwrap();
+
+        dispatch(
+          showNotification({
+            message: "Dropdown option added successfully",
+            severity: "success",
+          })
+        );
         setNewOption("");
-        showNotification("Dropdown option added successfully", "success");
+        fetchDropdownOptions();
       } catch (error) {
-        console.error("Error adding dropdown option:", error);
-        if (error.response.status === 404) {
-          setDropdownOptions([]);
-          showNotification("Could not find relevant data.", "warning");
-          return;
-        } else {
-          handleError(error);
-        }
+        handleError(error || "Failed to add dropdown option.");
       }
     }
   };
 
   const handleDeleteOption = async (optionToDelete) => {
     try {
-      await settingsService.deleteDropdownOption(optionToDelete);
-      const updatedOptions = await settingsService.getDropdownOptions();
-      setDropdownOptions(updatedOptions);
-      showNotification("Dropdown option deleted successfully", "success");
+      await dispatch(deleteDropdownOption(optionToDelete)).unwrap();
+
+      dispatch(
+        showNotification({
+          message: "Dropdown option deleted successfully",
+          severity: "success",
+        })
+      );
+      fetchDropdownOptions();
     } catch (error) {
-      if (error.response.status === 404) {
-        setDropdownOptions([]);
-        showNotification(
-          "could not find any relevant data for operation",
-          "warning"
-        );
-        return;
-      } else {
-        handleError(error);
-      }
+      handleError(error || "Failed to delete dropdown option.");
     }
   };
 
   return (
     <div className="settings-container">
       <h1>Settings</h1>
-      {isLoading && (
+      {isLoadingDropdown && (
         <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
           <CircularProgress />
         </Box>
@@ -204,7 +207,7 @@ function Settings() {
               Add Option
             </Button>
             <List>
-              {dropdownOptions.map((option) => (
+              {options.map((option) => (
                 <ListItem
                   key={option.id}
                   secondaryAction={

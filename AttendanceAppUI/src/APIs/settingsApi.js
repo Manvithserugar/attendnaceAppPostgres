@@ -12,18 +12,6 @@ const getDropdownOptions = async () => {
   }
 };
 
-const updateDropdownOptions = async (options) => {
-  try {
-    const response = await axios.post(
-      `${config.baseURL}/settings/dropdown-options`,
-      { options }
-    );
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-};
-
 const addDropdownOption = async (option) => {
   try {
     const response = await axios.post(
@@ -56,28 +44,9 @@ const downloadBackup = async () => {
   }
 };
 
-const uploadBackup = async (formData) => {
-  try {
-    const response = await axios.post(
-      `${config.baseURL}/student/attendance/backup`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-    return response;
-  } catch (error) {
-    throw error;
-  }
-};
-
 export default {
   getDropdownOptions,
-  updateDropdownOptions,
   addDropdownOption,
   deleteDropdownOption,
   downloadBackup,
-  uploadBackup,
 };

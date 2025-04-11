@@ -16,6 +16,7 @@ const ModalDeleteVerify = ({
   handleCloseModal,
   handleDelete,
   deleteMessage,
+  btnText,
 }) => {
   return (
     <Modal
@@ -73,7 +74,7 @@ const ModalDeleteVerify = ({
               }}
               color="error"
             >
-              Delete
+              {btnText || "Delete"}
             </Button>
           </Box>
         </Box>

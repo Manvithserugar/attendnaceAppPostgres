@@ -30,8 +30,18 @@ const accessUserRolePermissions = async () => {
   }
 };
 
+const logUserOut = async () => {
+  try {
+    const response = await axios.post(`${config.baseURL}/oauth/logout`);
+    return response;
+  } catch (err) {
+    throw err;
+  }
+};
+
 export default {
   signupUser,
   loginUser,
   accessUserRolePermissions,
+  logUserOut,
 };

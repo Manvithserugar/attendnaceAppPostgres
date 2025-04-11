@@ -3,16 +3,18 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "install-client": "cd ./client && npm install",
     "install-server": "cd ./server && npm install",
     "install-all": "concurrently \"npm run install-client\" \"npm run install-server\" ",
-    "start-server":"cd ./server && npm start",
+    "start-server": "cd ./server && npm start",
     "start-client": "cd ./client && npm start",
-    "start-all":"concurrently \"npm run start-server\" \"npm run start-client\" "
+    "start-all": "concurrently \"npm run start-server\" \"npm run start-client\" "
   },
   "keywords": [],
   "author": "manvith",
-  "license": "ISC"
-  
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
 }

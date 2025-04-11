@@ -44,6 +44,18 @@ export const fetchRolePermissions = createAsyncThunk(
   }
 );
 
+export const logUserOut = createAsyncThunk(
+  "oauth/logUserOut",
+  async (_, thunkAPI) => {
+    try {
+      const response = await oauthApi.logUserOut();
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response);
+    }
+  }
+);
+
 const oauthSlice = createSlice({
   name: "oauth",
   initialState: initialState,
@@ -89,9 +101,20 @@ const oauthSlice = createSlice({
         state.error = action.payload;
         state.permissions = [];
         state.role = "";
+      })
+      .addCase(logUserOut.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(logUserOut.fulfilled, (state) => {
+        state.error = null;
+        state.isLoading = false;
+      })
+      .addCase(logUserOut.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { logoutUser, setOauthError } = oauthSlice.actions;
 export default oauthSlice.reducer;

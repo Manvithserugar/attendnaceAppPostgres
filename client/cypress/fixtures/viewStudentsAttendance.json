@@ -1,0 +1,49 @@
+{
+  "mockData": [
+    {
+      "attendance_date": "2025-04-01T18:30:00.000Z",
+      "id": "ed6f111b-b3b7-4b8e-a50a-9864469f0f79",
+      "student_name": "ace",
+      "class_name": "keyboard",
+      "total": 72,
+      "consecutive_classes": 0,
+      "streak_of_four": 18,
+      "last4Dates": [
+        "2025-04-06T18:30:00.000Z",
+        "2025-04-06T18:30:00.000Z",
+        "2025-04-06T18:30:00.000Z",
+        "2025-04-06T18:30:00.000Z"
+      ]
+    },
+    {
+      "attendance_date": "2025-04-01T18:30:00.000Z",
+      "id": "32f147cd-54b6-46c8-8191-e941c98f653c",
+      "student_name": "brook",
+      "class_name": "Violin",
+      "total": 69,
+      "consecutive_classes": 1,
+      "streak_of_four": 17,
+      "last4Dates": [
+        "2025-04-06T18:30:00.000Z",
+        "2025-04-06T18:30:00.000Z",
+        "2025-04-06T18:30:00.000Z",
+        "2025-04-06T18:30:00.000Z"
+      ]
+    },
+    {
+      "attendance_date": "2025-04-01T18:30:00.000Z",
+      "id": "b16e14c0-8ba8-4d72-8fa3-b6d5b9e30d12",
+      "student_name": "Luffy",
+      "class_name": "Guitar",
+      "total": 43,
+      "consecutive_classes": 3,
+      "streak_of_four": 10,
+      "last4Dates": [
+        "2025-04-03T18:30:00.000Z",
+        "2025-04-01T18:30:00.000Z",
+        "2025-03-29T18:30:00.000Z",
+        "2025-03-27T18:30:00.000Z"
+      ]
+    }
+  ]
+}

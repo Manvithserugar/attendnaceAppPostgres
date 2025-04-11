@@ -1,0 +1,15 @@
+{
+    "role": "admin",
+    "permissions": [
+        "route.home",
+        "route.home.addAttendance",
+        "route.view",
+        "route.manage",
+        "route.manage.addStudent",
+        "route.manage.deleteStudent",
+        "route.settings",
+        "route.settings.addClass",
+        "route.settings.deleteClass",
+        "route.settings.downloadBackup"
+    ]
+}
